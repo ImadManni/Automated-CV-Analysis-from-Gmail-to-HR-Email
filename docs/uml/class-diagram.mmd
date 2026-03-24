@@ -1,0 +1,71 @@
+%% Diagramme de classes (simplifié) — Automated CV Analysis
+%% PCA — Mermaid
+
+classDiagram
+  direction TB
+
+  class Decision {
+    <<enumeration>>
+    ACCEPTÉE
+    REFUSÉE
+    À_REVOIR
+    NON_LISIBLE
+  }
+
+  class Candidature {
+    +string id
+    +string candidateName
+    +string email
+    +string date
+    +Decision decision
+    +number score
+    +string skills
+  }
+
+  class CandidaturesState {
+    +Candidature[] items
+    +string filter
+  }
+
+  class Store {
+    +CandidaturesState candidatures
+    +setFilter()
+    +setCandidatures()
+  }
+
+  class Config {
+    +GRAFANA_DASHBOARD_URL
+    +HERO_AUTO_ROTATE_ENABLED
+  }
+
+  class App {
+    +Routes / et /dashboard
+  }
+
+  class Layout {
+    +Header
+    +main
+    +Footer
+  }
+
+  class HomePage
+  class DashboardPage
+  class StatsCards
+  class CandidaturesTable
+  class AnalyticsCharts
+  class GrafanaSection
+
+  Candidature --> Decision : decision
+  CandidaturesState "1" *-- "*" Candidature : items
+  Store *-- CandidaturesState : candidatures
+
+  App *-- Layout
+  Layout *-- Header
+  Layout *-- Footer
+  App ..> HomePage : /
+  App ..> DashboardPage : /dashboard
+  DashboardPage *-- StatsCards
+  DashboardPage *-- CandidaturesTable
+  DashboardPage *-- AnalyticsCharts
+  DashboardPage *-- GrafanaSection
+  DashboardPage ..> Store : lit candidatures

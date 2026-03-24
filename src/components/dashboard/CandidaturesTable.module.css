@@ -1,0 +1,129 @@
+.wrapper {
+  background: var(--pca-card);
+  border: 1px solid var(--pca-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  color: var(--pca-gray);
+  background: var(--pca-bg-alt);
+  border-bottom: 1px solid var(--pca-border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--pca-border);
+  vertical-align: top;
+}
+
+.row:last-child td {
+  border-bottom: none;
+}
+
+.row:hover td {
+  background: var(--pca-bg-alt);
+}
+
+.name {
+  display: block;
+  font-weight: 500;
+  color: var(--pca-dark);
+}
+
+.email {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--pca-gray);
+  margin-top: 2px;
+}
+
+.subject {
+  color: var(--pca-dark);
+  max-width: 180px;
+}
+
+.date {
+  color: var(--pca-gray);
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeSuccess {
+  background: rgba(45, 157, 120, 0.2);
+  color: var(--success);
+}
+
+.badgeDanger {
+  background: rgba(220, 53, 69, 0.2);
+  color: var(--danger);
+}
+
+.badgeWarning {
+  background: rgba(245, 159, 0, 0.2);
+  color: var(--warning);
+}
+
+.badgeOrange {
+  background: rgba(232, 93, 4, 0.2);
+  color: var(--pca-orange);
+}
+
+.score {
+  font-weight: 600;
+  color: var(--pca-dark);
+}
+
+.summary {
+  color: var(--pca-gray);
+  font-size: 0.85rem;
+  max-width: 220px;
+}
+
+.detailLink {
+  font-size: 0.85rem;
+  color: var(--pca-orange);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.detailLink:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  background: var(--pca-card);
+  border: 1px solid var(--pca-border);
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  color: var(--pca-gray);
+}
+
+@media (max-width: 900px) {
+  .table th:nth-child(n+4),
+  .table td:nth-child(n+4) {
+    display: none;
+  }
+}

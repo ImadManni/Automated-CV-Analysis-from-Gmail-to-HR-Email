@@ -1,0 +1,39 @@
+[
+  {
+    "id": "5e26871a-a8fb-4f28-b187-4647f806b6de",
+    "candidateId": "5e26871a-a8fb-4f28-b187-4647f806b6de",
+    "candidateName": "string",
+    "email": "string",
+    "subject": "string",
+    "date": "string",
+    "decision": "À REVOIR",
+    "score": 0,
+    "skills": "string",
+    "experience": "string",
+    "rawSummary": "string"
+  },
+  {
+    "id": "n8n-1772021570876-sozy3hu",
+    "candidateName": "Youness Arroubi",
+    "email": "hydragaming595@gmail.com",
+    "subject": "Sans objet",
+    "date": "2026-02-25T12:12:22.000Z",
+    "decision": "ACCEPTÉE",
+    "score": 85,
+    "skills": "Génie logiciel, DevOps, cloud-native, microservices, automatisation, équipes Agile",
+    "experience": "5 mois — Stagiaire Ingénieur Logiciel & DevOps, Stagiaire Ingénieur Logiciel",
+    "rawSummary": "Candidat : Youness Arroubi  \nCompétences : Génie logiciel, DevOps, cloud-native, microservices, automatisation, équipes Agile  \nExpérience : 5 mois — Stagiaire Ingénieur Logiciel & DevOps, Stagiaire Ingénieur Logiciel  \nFormation : Cycle d’Ingénieur en Génie Informatique, Faculté des Sciences et Techniques d’Errachidia  \nLangues : Français, Anglais  \n\nÉVALUATION  \nScore : 85 %  \nDécision : ACCEPTÉE — Profil prometteur avec des compétences variées.\n\nPoints forts : Solide expérience en développement et automatisation de solutions.  \nÀ clarifier : Détails sur son expérience dans des environnements de production."
+  },
+  {
+    "id": "n8n-1772015597356-426f8xh",
+    "candidateName": "YOUNESS ARROUBI",
+    "email": "hydragaming595@gmail.com",
+    "subject": "Sans objet",
+    "date": "2026-02-24T15:15:19.000Z",
+    "decision": "ACCEPTÉE",
+    "score": 85,
+    "skills": "Développement logiciel, DevOps, Cloud-native, Automatisation, Microservices, Agile",
+    "experience": "5 mois — Stagiaire ingénieur logiciel & DevOps, Stagiaire ingénieur logiciel",
+    "rawSummary": "Candidat : YOUNESS ARROUBI  \nCompétences : Développement logiciel, DevOps, Cloud-native, Automatisation, Microservices, Agile  \nExpérience : 5 mois — Stagiaire ingénieur logiciel & DevOps, Stagiaire ingénieur logiciel  \nFormation : Cycle d’Ingénieur en Génie Informatique, Faculté des Sciences et Techniques d’Errachidia  \nLangues : Français, Anglais  \n\nÉVALUATION  \nScore : 85 %  \nDécision : ACCEPTÉE — Compétences techniques alignées avec les besoins de l’entreprise.  \n\nPoints forts : Solide expérience en développement et déploiement automatisé.  \nÀ clarifier : Disponibilité après la fin de ses études."
+  }
+]

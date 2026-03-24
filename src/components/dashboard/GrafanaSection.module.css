@@ -1,0 +1,64 @@
+.section {
+  margin-top: 2rem;
+}
+
+.card {
+  background: linear-gradient(135deg, #1a1d23 0%, #252a33 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.75rem;
+  color: #e4e6eb;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.icon {
+  color: #f46800;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+.description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f46800;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: background 0.2s, transform 0.15s;
+  text-decoration: none;
+}
+
+.cta:hover {
+  background: #ff8533;
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}

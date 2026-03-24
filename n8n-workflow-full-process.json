@@ -1,0 +1,318 @@
+{
+  "name": "PCA - Full process (IMAP → API → MinIO → Analyze + Webhooks)",
+  "nodes": [
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "dataPropertyAttachmentsPrefixName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [3200, 2352],
+      "id": "e1279b28-fdae-4c3f-a536-443c3fabc448",
+      "name": "Email Trigger (IMAP)",
+      "credentials": { "imap": { "id": "S9LcR6qVRxo5S5X9", "name": "IMAP account 2" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ne garder que les emails qui ressemblent à une candidature (sujet ou pièce jointe CV)\nconst items = $input.all();\nconst subjectKeywords = /candidature|cv|application|postule|resume|curriculum|offre|emploi/i;\n\nconst filtered = items.filter((item) => {\n  const subject = String(item.json.subject || '').toLowerCase();\n  const bin = item.binary || {};\n  const attKey = Object.keys(bin).find((k) => /^attachment_?\\d*$/i.test(k) || k === 'data');\n  const hasAttachment = attKey && bin[attKey];\n  const fn = (attKey && bin[attKey].fileName) || '';\n  const hasCvAttachment = hasAttachment && /\\.(pdf|docx?)$/i.test(fn);\n  return subjectKeywords.test(subject) || hasCvAttachment;\n});\n\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3412, 2352],
+      "id": "filter-candidature-email",
+      "name": "0 - Filter Candidature Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3005/api/test/candidatures",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? $json.from.value[0].address : ($json.from || $json.envelope?.from || 'inconnu@email.com') }}"
+            },
+            {
+              "name": "fullName",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? ($json.from.value[0].name || $json.from.value[0].address) : ($json.from || 'Candidat') }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject || 'Sans objet' }}"
+            },
+            {
+              "name": "source",
+              "value": "email"
+            },
+            {
+              "name": "text",
+              "value": "={{ ($json.text || $json.textPlain || '').toString().slice(0, 500) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [3632, 2480],
+      "id": "db914a25-0770-4493-a132-633aa6f48f35",
+      "name": "1 - Initialize Candidate API"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3852, 2352],
+      "id": "099d8970-60ce-496e-8e54-f881a80dedae",
+      "name": "2 - Merge (Email + API response)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst baseUrl = 'http://127.0.0.1:9000';\n\nreturn items.map((item) => {\n  const uploadUrl = String(item.json.uploadUrl || '').trim();\n  let fullUploadUrl = baseUrl + (uploadUrl.startsWith('/') ? uploadUrl : '/' + uploadUrl);\n  if (!fullUploadUrl.startsWith('http')) fullUploadUrl = baseUrl + '/' + (uploadUrl.replace(/^\\//, '') || 'cvs');\n  const bin = item.binary || {};\n  const attKey = Object.keys(bin).find((k) => k.startsWith('attachment_'));\n  if (attKey && attKey !== 'attachment_0') bin.attachment_0 = bin[attKey];\n  return { json: { ...item.json, fullUploadUrl }, binary: bin };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4072, 2352],
+      "id": "5e9905ca-8725-45c6-9184-2754f341d3dd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.fullUploadUrl }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4292, 2352],
+      "id": "dd44119f-a448-47b1-a938-51bb709cf5ab",
+      "name": "3 - Upload CV to MinIO",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6968f427-5923-43f8-8619-483367f275b5",
+              "name": "status",
+              "value": "uploaded",
+              "type": "string"
+            },
+            {
+              "id": "0b57c6ad-9dfe-459a-89f5-5a26d687cf91",
+              "name": "candidateId",
+              "value": "={{ $('1 - Initialize Candidate API').item.json.candidateId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [4512, 2352],
+      "id": "a2bba4f2-9c21-4b5d-8738-52cb4001aa23",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:3005/api/campaigns",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4732, 2224],
+      "id": "7ca8e98e-e8a3-4b16-83a3-1490cbf78ac2",
+      "name": "5 - Fetch Campaigns (API)"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://127.0.0.1:3005/api/campaigns/' + (($json.campaigns && $json.campaigns[0] && $json.campaigns[0].id) || ($json[0] && $json[0].id) || '1') + '/offers' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4952, 2224],
+      "id": "d50f638e-dd79-40e4-881c-780dd9c3f658",
+      "name": "6 - Fetch Offers (API)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1111111-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+              "name": "offerTitle",
+              "value": "={{ $json.offers && $json.offers[0] ? $json.offers[0].title : ($json[0] && $json[0].title) || 'Poste' }}",
+              "type": "string"
+            },
+            {
+              "id": "b2222222-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+              "name": "offerDescription",
+              "value": "={{ $json.offers && $json.offers[0] ? (($json.offers[0].company || '') + ' - ' + ($json.offers[0].location || '')) : (($json[0] && $json[0].company) || '') + ' - ' + (($json[0] && $json[0].location) || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [5172, 2224],
+      "id": "6c02a0b6-3115-4806-9e2e-8ce20d63be6b",
+      "name": "7 - Set Offer Context"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://127.0.0.1:3005/api/candidatures/' + $('1 - Initialize Candidate API').item.json.id + '/analyze' }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "offerTitle",
+              "value": "={{ $json.offerTitle }}"
+            },
+            {
+              "name": "offerDescription",
+              "value": "={{ $json.offerDescription }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [5392, 2224],
+      "id": "128222e8-ef46-4d64-b4bb-ae6c63cbfbe4",
+      "name": "4 - Analyze CV (API)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pca-candidature-decision",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [3200, 2048],
+      "id": "3841b88c-d1fe-4352-9e0f-2478b26b54ec",
+      "name": "Webhook Décision",
+      "webhookId": "0ef0dba0-8e44-4b6e-9c23-ff09caff6e49"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "Votre candidature chez PCA – Décision",
+        "emailFormat": "text",
+        "text": "=Bonjour {{ $json.body && $json.body.candidateName ? $json.body.candidateName : ($json.candidateName || 'candidat') }},\n\nNous avons bien étudié votre candidature pour :\n{{ $json.body && $json.body.subject ? $json.body.subject : ($json.subject || 'votre candidature chez PCA') }}.\n\nNous sommes heureux de vous informer que votre candidature a été ACCEPTÉE par nos équipes RH.\n\nCordialement,\nPCA Payment Center for Africa",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [3420, 2048],
+      "id": "ac021521-8311-410d-85f2-2191e838b07f",
+      "name": "Send Email Décision",
+      "credentials": {
+        "smtp": {
+          "id": "hXmmrGQCJWoNCpDZ",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pca-interview-invitation",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [3200, 1824],
+      "id": "2765de1c-c81b-4c33-b8a4-94a3899a0ecd",
+      "name": "Webhook Invitation Entretien",
+      "webhookId": "904d2cc4-935c-4ebd-ac87-7195c2ed3ed0"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "=Invitation à un entretien – Candidature {{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}",
+        "emailFormat": "text",
+        "text": "=Madame, Monsieur {{ $json.body && $json.body.candidateName ? $json.body.candidateName : $json.candidateName }},\n\nSuite à l'étude de votre candidature pour le poste de \"{{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}\", nous vous invitons à un entretien.\n\n- Date et heure : {{ $json.body && $json.body.scheduledAt ? $json.body.scheduledAt : $json.scheduledAt }}\n- Mode : {{ $json.body && $json.body.mode ? $json.body.mode : $json.mode }}\n- Lieu / lien visio : {{ $json.body && $json.body.location ? $json.body.location : $json.location }}\n\nRestant à votre disposition,\n\nCordialement,\nÉquipe RH – PCA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [3420, 1824],
+      "id": "ed8d7aab-a5db-4bda-9707-85582b74ae40",
+      "name": "Send Email Invitation Entretien",
+      "credentials": {
+        "smtp": {
+          "id": "hXmmrGQCJWoNCpDZ",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [[{ "node": "0 - Filter Candidature Email", "type": "main", "index": 0 }]]
+    },
+    "0 - Filter Candidature Email": {
+      "main": [[
+        { "node": "2 - Merge (Email + API response)", "type": "main", "index": 0 },
+        { "node": "1 - Initialize Candidate API", "type": "main", "index": 0 }
+      ]]
+    },
+    "1 - Initialize Candidate API": {
+      "main": [[{ "node": "2 - Merge (Email + API response)", "type": "main", "index": 1 }]]
+    },
+    "2 - Merge (Email + API response)": {
+      "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript": {
+      "main": [[{ "node": "3 - Upload CV to MinIO", "type": "main", "index": 0 }]]
+    },
+    "3 - Upload CV to MinIO": {
+      "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]]
+    },
+    "Edit Fields": {
+      "main": [[{ "node": "5 - Fetch Campaigns (API)", "type": "main", "index": 0 }]]
+    },
+    "5 - Fetch Campaigns (API)": {
+      "main": [[{ "node": "6 - Fetch Offers (API)", "type": "main", "index": 0 }]]
+    },
+    "6 - Fetch Offers (API)": {
+      "main": [[{ "node": "7 - Set Offer Context", "type": "main", "index": 0 }]]
+    },
+    "7 - Set Offer Context": {
+      "main": [[{ "node": "4 - Analyze CV (API)", "type": "main", "index": 0 }]]
+    },
+    "Webhook Décision": {
+      "main": [[{ "node": "Send Email Décision", "type": "main", "index": 0 }]]
+    },
+    "Webhook Invitation Entretien": {
+      "main": [[{ "node": "Send Email Invitation Entretien", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
