@@ -1,0 +1,339 @@
+.wrap {
+  scroll-margin-top: 5.5rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(232, 93, 4, 0.2);
+  background: linear-gradient(
+    165deg,
+    rgba(232, 93, 4, 0.05) 0%,
+    var(--pca-card) 40%,
+    var(--pca-card) 100%
+  );
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+/* Barre d’info : ancrage visuel + indication scroll (landing dashboard) */
+.scrollHintBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  border-bottom: 1px solid rgba(232, 93, 4, 0.15);
+  background: rgba(254, 243, 230, 0.65);
+}
+
+.scrollHintStrong {
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.scrollHintSoft {
+  color: var(--pca-gray);
+  font-weight: 500;
+}
+
+/* ~4 lignes de données visibles ; en-tête collant dans la zone */
+.bodyViewport {
+  max-height: min(21.25rem, 52vh);
+  overflow: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.bodyViewport::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.bodyViewport::-webkit-scrollbar-thumb {
+  background: rgba(234, 88, 12, 0.38);
+  border-radius: 4px;
+}
+
+.bodyViewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 88, 12, 0.55);
+}
+
+.table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+
+.table th,
+.table td {
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--pca-border);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: rgba(252, 230, 210, 0.98);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9a3412;
+  border-bottom: 2px solid rgba(234, 88, 12, 0.22);
+  box-shadow: 0 1px 0 rgba(234, 88, 12, 0.08);
+}
+
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--pca-card);
+  box-shadow: 3px 0 10px rgba(15, 23, 42, 0.04);
+  min-width: 10rem;
+  max-width: 13rem;
+}
+
+thead .stickyCol {
+  left: 0;
+  top: 0;
+  z-index: 5;
+  background: rgba(252, 230, 210, 0.99);
+  box-shadow:
+    3px 0 10px rgba(15, 23, 42, 0.05),
+    0 1px 0 rgba(234, 88, 12, 0.08);
+}
+
+.candidateCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.name {
+  font-weight: 700;
+  color: var(--pca-dark);
+  line-height: 1.2;
+  font-size: 0.84rem;
+}
+
+.buTag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a3412;
+  background: rgba(254, 243, 230, 0.95);
+  border: 1px solid rgba(232, 93, 4, 0.25);
+  border-radius: 6px;
+  padding: 0.12rem 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.subject {
+  font-size: 0.72rem;
+  color: var(--pca-gray);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--pca-orange);
+  text-decoration: none;
+  margin-top: 0.15rem;
+  width: fit-content;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.cellEmpty {
+  color: var(--pca-gray);
+  opacity: 0.6;
+  font-style: italic;
+  font-size: 0.76rem;
+}
+
+.cellInner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badgePlan {
+  background: rgba(234, 88, 12, 0.16);
+  color: #9a3412;
+}
+
+.badgeDone {
+  background: rgba(34, 197, 94, 0.18);
+  color: #15803d;
+}
+
+.badgeCancel {
+  background: rgba(220, 53, 69, 0.14);
+  color: #b02a37;
+}
+
+.date {
+  font-size: 0.74rem;
+  color: var(--pca-dark);
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 0.68rem;
+  color: var(--pca-gray);
+  line-height: 1.3;
+}
+
+.hiringCell {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #9a3412;
+  margin: 0.1rem 0 0.05rem;
+  line-height: 1.3;
+}
+
+.hiringGlobal {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0f766e;
+  margin-top: 0.2rem;
+  line-height: 1.3;
+}
+
+.hiringSpan {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--pca-gray);
+  margin-top: 0.08rem;
+  line-height: 1.25;
+}
+
+.empty {
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--pca-gray);
+  font-size: 0.88rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.72rem;
+  color: var(--pca-gray);
+  border-top: 1px solid var(--pca-border);
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.legend span:not(.legendSep) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.legendSep {
+  color: var(--pca-border);
+  user-select: none;
+  font-weight: 300;
+}
+
+.matrixError {
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  color: #b02a37;
+  background: rgba(220, 53, 69, 0.09);
+  border-bottom: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.validateDone,
+.validateActive {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed rgba(232, 93, 4, 0.2);
+  font-size: 0.72rem;
+  color: var(--pca-gray);
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.validateDone {
+  cursor: default;
+  color: #15803d;
+}
+
+.validateCheckbox {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+  accent-color: var(--pca-orange);
+  cursor: pointer;
+}
+
+.validateDone .validateCheckbox {
+  cursor: default;
+  accent-color: #15803d;
+}
+
+.validateLabelText {
+  font-weight: 600;
+  color: #9a3412;
+  user-select: none;
+}
+
+.validateActive:hover .validateLabelText {
+  text-decoration: underline;
+}
+
+.validateBlocked {
+  margin: 0.4rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--pca-border);
+  font-size: 0.68rem;
+  color: var(--pca-gray);
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .table {
+    min-width: 620px;
+  }
+
+  .bodyViewport {
+    max-height: min(19rem, 45vh);
+  }
+}

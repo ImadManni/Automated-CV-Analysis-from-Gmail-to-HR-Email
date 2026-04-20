@@ -1,0 +1,131 @@
+{
+  "name": "Automated CV - 3 Steps (Gmail → API → MinIO)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": { "item": [{ "mode": "everyMinute" }] },
+        "simple": false,
+        "filters": {},
+        "options": { "downloadAttachments": true }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 0],
+      "id": "ffc56cf4-2d86-4310-be74-785103468a15",
+      "name": "Gmail Trigger",
+      "credentials": { "gmailOAuth2": { "id": "mnNU55BVcOrbbyaA", "name": "Gmail account 9" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3005/api/test/candidatures",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"email\": \"test@test.com\",\n  \"fullName\": \"Test User\",\n  \"source\": \"email\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [240, 0],
+      "id": "c4e65479-071a-466b-a5eb-650c577ed8e2",
+      "name": "1 - Initialize Candidate API"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [480, 0],
+      "id": "a1b2c3d4-merge-5678-90ab-cdef",
+      "name": "2 - Merge (Gmail + API response)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst baseUrl = 'http://localhost:9000';\n\nreturn items.map((item) => {\n  const uploadUrl = String(item.json.uploadUrl || '').trim();\n  let fullUploadUrl = baseUrl + uploadUrl;\n  fullUploadUrl = fullUploadUrl.replace(/^[=]+/, '').replace(/^-+/, '');\n  if (!fullUploadUrl.startsWith('http')) fullUploadUrl = baseUrl + uploadUrl;\n\n  return {\n    json: { ...item.json, fullUploadUrl },\n    binary: item.binary,\n  };\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "code-full-upload-url",
+      "name": "Build full upload URL"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.fullUploadUrl }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [720, 0],
+      "id": "5bd9750d-85a6-49af-b9ca-34639e3011e6",
+      "name": "3 - Upload CV to MinIO",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "6968f427-5923-43f8-8619-483367f275b5", "name": "status", "value": "uploaded", "type": "string" },
+            { "id": "0b57c6ad-9dfe-459a-89f5-5a26d687cf91", "name": "candidateId", "value": "={{ $('1 - Initialize Candidate API').item.json.candidateId }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 0],
+      "id": "040be7b2-5d94-4022-a092-9439132d953e",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          { "node": "1 - Initialize Candidate API", "type": "main", "index": 0 },
+          { "node": "2 - Merge (Gmail + API response)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "1 - Initialize Candidate API": {
+      "main": [
+        [
+          { "node": "2 - Merge (Gmail + API response)", "type": "main", "index": 1 }
+        ]
+      ]
+    },
+    "2 - Merge (Gmail + API response)": {
+      "main": [
+        [
+          { "node": "Build full upload URL", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build full upload URL": {
+      "main": [
+        [
+          { "node": "3 - Upload CV to MinIO", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "3 - Upload CV to MinIO": {
+      "main": [
+        [
+          { "node": "Edit Fields", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

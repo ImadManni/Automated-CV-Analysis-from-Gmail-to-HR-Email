@@ -1,0 +1,11 @@
+src/components/dashboard/InterviewMatrixTable.tsx(212,69): error TS2345: Argument of type 'InterviewPipelineRow' is not assignable to parameter of type 'MatrixInterview'.
+  Type 'InterviewPipelineRow' is missing the following properties from type '{ mode: string; location: string; }': mode, location
+src/components/dashboard/InterviewMatrixTable.tsx(224,65): error TS2339: Property 'location' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(225,31): error TS2339: Property 'mode' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(226,31): error TS2339: Property 'location' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(226,46): error TS2339: Property 'location' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(226,75): error TS2339: Property 'location' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(226,105): error TS2339: Property 'location' does not exist on type 'InterviewPipelineRow'.
+src/components/dashboard/InterviewMatrixTable.tsx(244,52): error TS2345: Argument of type 'InterviewPipelineRow' is not assignable to parameter of type 'MatrixInterview'.
+  Type 'InterviewPipelineRow' is missing the following properties from type '{ mode: string; location: string; }': mode, location
+src/components/Header.tsx(36,9): error TS6133: 'isActive' is declared but its value is never read.

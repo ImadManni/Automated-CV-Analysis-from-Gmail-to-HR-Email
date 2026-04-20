@@ -1,0 +1,59 @@
+@startuml use-case-automated-cv-analysis
+!theme plain
+title Use Case — Automated CV Analysis (Gmail → HR Email)\nPCA Payment Center for Africa
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Utilisateur\n(Visiteur / RH)" as User
+actor "Workflow n8n\n(Système externe)" as N8N
+
+rectangle "Application Web PCA" {
+  usecase "Consulter la page d'accueil" as UC1
+  usecase "Voir le hero et le processus" as UC2
+  usecase "Voir la localisation\n(carte + Google Maps)" as UC3
+  usecase "Accéder au tableau de bord" as UC4
+  usecase "Consulter les statistiques\n(Total, Acceptées, Refusées, etc.)" as UC5
+  usecase "Filtrer les candidatures\n(par décision)" as UC6
+  usecase "Consulter les analytics détaillées\n(par jour, scores, compétences)" as UC7
+  usecase "Ouvrir le dashboard Grafana" as UC8
+  usecase "Consulter la liste des candidatures" as UC9
+}
+
+rectangle "Système externe" {
+  usecase "Déclencher le workflow\n(réception email Gmail)" as UC10
+  usecase "Extraire et analyser le CV\n(IA)" as UC11
+  usecase "Envoyer la décision\nvers RH" as UC12
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+
+UC4 ..> UC5 : <<include>>
+UC4 ..> UC9 : <<include>>
+UC4 ..> UC7 : <<include>>
+UC4 ..> UC8 : <<extend>>
+
+N8N --> UC10
+UC10 ..> UC11 : <<include>>
+UC11 ..> UC12 : <<include>>
+
+note right of UC1
+  Hero, rotation d'images,
+  lien vers dashboard
+end note
+
+note right of UC4
+  Données mock (Redux).
+  Plus tard : API n8n
+end note
+
+@enduml

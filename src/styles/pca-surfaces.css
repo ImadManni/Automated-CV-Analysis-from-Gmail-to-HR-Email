@@ -1,0 +1,143 @@
+/**
+ * Surfaces PCA — alignées sur la fiche candidature (dégradé orange discret, bordures, ombres).
+ * Utiliser en complément des CSS modules : className={`pca-surface ${styles.foo}`}
+ */
+
+:root {
+  --pca-page-mesh: linear-gradient(
+    180deg,
+    rgba(255, 248, 242, 0.78) 0%,
+    rgba(255, 252, 249, 0.42) 14%,
+    var(--pca-bg) 34%,
+    var(--pca-bg) 100%
+  );
+  --pca-surface-gradient: linear-gradient(
+    165deg,
+    rgba(232, 93, 4, 0.07) 0%,
+    rgba(255, 255, 255, 0.94) 38%,
+    var(--pca-card) 100%
+  );
+  --pca-surface-border: rgba(232, 93, 4, 0.25);
+  --pca-surface-shadow: 0 8px 28px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+  --pca-inner-tile-border: #e2e8f0;
+  --pca-inner-tile-shadow: 0 1px 3px rgba(15, 23, 42, 0.055);
+}
+
+.pca-pageBg {
+  min-height: 100vh;
+  padding: 2rem 1.5rem 4rem;
+  background: var(--pca-page-mesh);
+}
+
+.pca-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.pca-container--wide {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.pca-container--narrow {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.pca-pageTitle {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--pca-dark);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.03em;
+  font-family: var(--font-sans);
+}
+
+.pca-pageLead {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--pca-gray);
+  line-height: 1.5;
+  margin: 0 0 1.2rem;
+  max-width: 42rem;
+}
+
+.pca-phaseEyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c2410c;
+}
+
+.pca-phaseTitle {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-weight: 700;
+  color: var(--pca-dark);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.pca-phaseLead {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.45;
+  max-width: 40rem;
+}
+
+.pca-surface {
+  margin-top: 1.35rem;
+  padding: 1.35rem 1.4rem 1.45rem;
+  border-radius: 14px;
+  background: var(--pca-surface-gradient);
+  border: 1px solid var(--pca-surface-border);
+  box-shadow: var(--pca-surface-shadow);
+}
+
+.pca-surface.pca-surface--mt-lg {
+  margin-top: 2.35rem;
+}
+
+.pca-surface--tight {
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.pca-surfaceHead {
+  margin-bottom: 1rem;
+}
+
+.pca-backPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--pca-border);
+  background: var(--pca-card);
+  color: var(--pca-gray);
+  cursor: pointer;
+  margin-bottom: 1rem;
+  font-family: inherit;
+  font-weight: 500;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+}
+
+.pca-backPill:hover {
+  border-color: var(--pca-orange);
+  color: var(--pca-orange);
+}
+
+.pca-innerTile {
+  border-radius: 12px;
+  background: var(--pca-card);
+  border: 1px solid var(--pca-inner-tile-border);
+  box-shadow: var(--pca-inner-tile-shadow);
+}

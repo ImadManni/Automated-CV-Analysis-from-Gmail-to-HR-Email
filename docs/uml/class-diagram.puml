@@ -1,0 +1,80 @@
+@startuml class-diagram-automated-cv-analysis
+!theme plain
+title Diagramme de classes (simplifié) — Automated CV Analysis\nPCA Payment Center for Africa
+
+skinparam classAttributeIconSize 0
+
+' ========== Domaine ==========
+enum Decision {
+  ACCEPTÉE
+  REFUSÉE
+  À REVOIR
+  NON_LISIBLE
+}
+
+class Candidature {
+  + id : string
+  + candidateName : string
+  + email : string
+  + date : string
+  + decision : Decision
+  + score? : number
+  + skills? : string
+}
+
+Candidature --> Decision : decision
+
+class CandidaturesState {
+  + items : Candidature[]
+  + filter : Decision | "ALL"
+}
+
+CandidaturesState "1" *-- "*" Candidature : items
+
+' ========== Store ==========
+class Store {
+  + candidatures : CandidaturesState
+  + setFilter()
+  + setCandidatures()
+}
+Store *-- CandidaturesState : candidatures
+
+' ========== Config ==========
+class "config/ui" as Config {
+  + GRAFANA_DASHBOARD_URL
+  + HERO_AUTO_ROTATE_ENABLED
+}
+
+' ========== Vue d'ensemble app ==========
+class App {
+  + Routes : / , /dashboard
+}
+
+class Layout {
+  + Header
+  + main
+  + Footer
+}
+
+class HomePage
+class DashboardPage
+
+package "Composants dashboard" {
+  class StatsCards
+  class CandidaturesTable
+  class AnalyticsCharts
+  class GrafanaSection
+}
+
+App *-- Layout
+Layout *-- "1" Header
+Layout *-- "1" Footer
+App ..> HomePage : /
+App ..> DashboardPage : /dashboard
+DashboardPage *-- StatsCards
+DashboardPage *-- CandidaturesTable
+DashboardPage *-- AnalyticsCharts
+DashboardPage *-- GrafanaSection
+DashboardPage ..> Store : lit candidatures
+
+@enduml

@@ -1,0 +1,248 @@
+/* Professional footer: multi-column, icons, map link */
+
+.footer {
+  margin-top: auto;
+  background: #0d0d0d;
+  color: #dee2e6;
+  padding: 3rem 1.5rem 0;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Bloc marque PCA + Process your innovation */
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.brand:hover {
+  text-decoration: none;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.08);
+}
+.brandLogo {
+  height: 34px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  object-position: left;
+  display: block;
+}
+.brand:hover .brandLogo {
+  opacity: 0.95;
+}
+.brandText {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.brandSlogan {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--pca-orange);
+  letter-spacing: 0.02em;
+}
+
+.title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titleIcon {
+  color: var(--pca-orange);
+  flex-shrink: 0;
+}
+
+.legal {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.socialWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #dee2e6;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.socialLink:hover {
+  background: var(--pca-orange);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link {
+  color: #dee2e6;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: var(--pca-orange);
+  text-decoration: none;
+}
+
+.mapText {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.mapLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--pca-orange);
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  transition: color 0.2s;
+}
+
+.mapLink:hover {
+  color: var(--pca-orange-light);
+  text-decoration: none;
+}
+
+.mapLinkIcon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.mapLinkSecondary {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.mapLinkSecondary:hover {
+  color: var(--pca-orange);
+  text-decoration: none;
+}
+
+.copyright {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.helpBlock {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.helpIcon {
+  color: var(--pca-orange);
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.helpTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.35rem 0;
+}
+
+.helpText {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 0.75rem 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.helpLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.helpLink {
+  color: var(--pca-orange);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.helpLink:hover {
+  text-decoration: none;
+  color: var(--pca-orange-light);
+}
+
+@media (max-width: 600px) {
+  .container {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .block:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}

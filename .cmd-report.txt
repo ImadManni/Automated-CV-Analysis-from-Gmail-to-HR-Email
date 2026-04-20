@@ -1,0 +1,6 @@
+﻿=== index.js ===
+EXISTS 105480
+=== cv-name-heuristic ===
+EXISTS 984
+=== git stderr ===
+fatal: path 'server/cv-name-heuristic.js' exists on disk, but not in 'HEAD'

@@ -1,0 +1,67 @@
+:root {
+  /* PCA brand */
+  --pca-orange: #e85d04;
+  --pca-orange-light: #f48c06;
+  --pca-dark: #212529;
+  --pca-gray: #495057;
+  --pca-silver: #6c757d;
+  --pca-bg: #ffffff;
+  --pca-bg-alt: #f8f9fa;
+  --pca-card: #ffffff;
+  --pca-border: #dee2e6;
+  --success: #2d9d78;
+  --danger: #dc3545;
+  --warning: #f59f00;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--pca-bg);
+  color: var(--pca-dark);
+  line-height: 1.6;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--pca-orange);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}

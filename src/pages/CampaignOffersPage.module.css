@@ -1,0 +1,131 @@
+.page {
+  min-height: 100vh;
+  padding: 2rem 1.5rem 4rem;
+  background: var(--pca-bg);
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: #c2410c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.backLink:hover {
+  text-decoration: none;
+  color: var(--pca-orange);
+}
+
+.link {
+  color: var(--pca-orange);
+  text-decoration: none;
+  font-weight: 500;
+}
+.link:hover {
+  text-decoration: underline;
+}
+
+.title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--pca-dark);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--pca-gray);
+  margin-bottom: 1.5rem;
+}
+
+.error {
+  color: var(--danger);
+  margin-bottom: 1rem;
+}
+
+.info {
+  color: var(--pca-gray);
+}
+
+.tableWrap {
+  margin-top: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(232, 93, 4, 0.22);
+  background: linear-gradient(
+    165deg,
+    rgba(232, 93, 4, 0.04) 0%,
+    var(--pca-card) 45%,
+    var(--pca-card) 100%
+  );
+  overflow-x: auto;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tableWrap:hover {
+  border-color: rgba(232, 93, 4, 0.35);
+  box-shadow: 0 10px 22px rgba(232, 93, 4, 0.08);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--pca-border);
+  text-align: left;
+}
+
+.table th {
+  background: rgba(252, 230, 210, 0.95);
+  font-weight: 700;
+  color: #9a3412;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: rgba(255, 247, 237, 0.45);
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  padding: 0.44rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 93, 4, 0.35);
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--pca-orange);
+  white-space: nowrap;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease-out;
+}
+
+.linkButton:hover {
+  background: var(--pca-orange);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(232, 93, 4, 0.25);
+  transform: translateY(-1px);
+}
+
