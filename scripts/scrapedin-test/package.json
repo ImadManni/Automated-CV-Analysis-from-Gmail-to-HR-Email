@@ -1,0 +1,14 @@
+{
+  "name": "pca-scrapedin-test",
+  "private": true,
+  "type": "commonjs",
+  "description": "Test local scrapedin — ne pas committer credentials LinkedIn",
+  "scripts": {
+    "test:one": "node test-one-profile.js",
+    "send:pca": "node send-to-pca-api.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "scrapedin": "1.0.21"
+  }
+}

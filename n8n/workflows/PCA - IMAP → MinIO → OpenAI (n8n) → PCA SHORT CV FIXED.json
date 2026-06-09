@@ -1,0 +1,621 @@
+{
+  "name": "PCA - IMAP → MinIO → OpenAI (n8n) → PCA",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## E-mails « Email — Entretien … » (PCA)\n\n1. **From** : texte fixe (ex. hydragaming595@gmail.com). Pas de `$env` sur From (« env vars denied », souvent « No recipients »).\n\n2. **To** : `={{ String($json.toEmail || $json.email || '').trim() }}` — après **Normalize**, la sortie est **plate** : ne pas utiliser `$json.body.email`.\n\n3. **Send Email v2.1** : **Resource = Email**, **Operation = Send** (sinon le destinataire peut être ignoré → « No recipients defined »).\n\n4. Credential SMTP sur les 3 nœuds ; `.env` : `N8N_INTERVIEW_WEBHOOK_URL_*` → …/webhook/pca-interview-*",
+        "height": 380,
+        "width": 460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -15040,
+        4912
+      ],
+      "id": "114ff1dd-46a5-4e25-9932-332c586404a9",
+      "name": "LISEZ — SMTP sans $env"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5a397bf0-12cf-4ae2-a927-2357e1cfaa6e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -15168,
+        5264
+      ],
+      "id": "7f3cdbc0-90dd-4de9-af3e-868bdce3e391",
+      "name": "Webhook (PCA) — Entretien RH",
+      "webhookId": "eaca192c-cc7a-42cf-a7e2-cb4c062600e8"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "=Invitation à un entretien RH – Candidature {{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}",
+        "emailFormat": "text",
+        "text": "=Madame, Monsieur {{ $json.body && $json.body.candidateName ? $json.body.candidateName : $json.candidateName }},\n\nSuite à l'étude de votre candidature pour le poste de \"{{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}\", nous vous invitons à un entretien.\n\n- Date et heure : {{ $json.body && $json.body.scheduledAt ? $json.body.scheduledAt : $json.scheduledAt }}\n- Mode : {{ $json.body && $json.body.mode ? $json.body.mode : $json.mode }}\n- Lieu / lien visio : {{ $json.body && $json.body.location ? $json.body.location : $json.location }}\n\nRestant à votre disposition,\n\nCordialement,\nÉquipe RH – PCA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -14544,
+        5264
+      ],
+      "id": "3a41c532-8620-4e38-99a2-b4b26c3d1550",
+      "name": "Email — Entretien RH",
+      "webhookId": "5f0667c3-6ec7-4a0c-922d-5f33dfee593e",
+      "credentials": {
+        "smtp": {
+          "id": "Uuo8bp7ZuNoWBkiy",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## OpenAI dans n8n + « mémoire »\n- Ce flux utilise **HTTP Request** + credential **OpenAI API** (clé uniquement dans n8n).\n- **Mémoire conversationnelle** : pour plusieurs tours dans le même workflow, remplacez les nœuds 10–11 par un sous-graphe **Basic LLM Chain** + **Window Buffer Memory** + **OpenAI Chat Model** (menu *Add node* → LangChain).\n- Si l’import signale une erreur de credential : ouvrez le nœud 10 et sélectionnez votre compte OpenAI.",
+        "height": 320,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -12608,
+        5504
+      ],
+      "id": "ad92d488-fe0b-4686-b82e-a97f58225f28",
+      "name": "Note mémoire LangChain"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://127.0.0.1:3005/api/candidatures/' + $json.candidatureId + '/analysis-result' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ summary: $json.summary, skills: $json.skills, experience: $json.experience, strengths: $json.strengths, risks: $json.risks, score: $json.score, decision: $json.decision, offer_context: $json.offer_context, school: $json.school, school_type: $json.school_type, phone: $json.phone, experience_count: $json.experience_count, experience_duration: $json.experience_duration, experience_years_avg: $json.experience_years_avg, last_employer: $json.last_employer, candidate_name: $json.candidate_name != null && $json.candidate_name !== '' ? $json.candidate_name : null, emailSubject: $('2 - Merge (Email + API response)').first().json.subject, cv_excerpt: String(($('8 - Get CV text (PCA, no OpenAI)').first().json.text || '')).slice(0, 6000), offerTitle: $json.offerTitle, offerDescription: $json.offerDescription }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -12112,
+        5808
+      ],
+      "id": "a356c7c2-71d7-4fc3-a964-87952306604f",
+      "name": "12 - Save analysis (PCA API)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst content = raw.choices && raw.choices[0] && raw.choices[0].message && raw.choices[0].message.content;\nif (!content) throw new Error('Réponse OpenAI vide: ' + JSON.stringify(raw).slice(0, 500));\nlet s = String(content).trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/,'').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(s);\n} catch (e) {\n  throw new Error('JSON invalide: ' + e.message + ' — ' + s.slice(0, 300));\n}\nconst meta = $('9 - Assemble LLM payload').first().json;\nconst rawName = parsed.candidate_name ?? parsed.candidateName ?? parsed.full_name ?? parsed.nom_candidat ?? parsed.nomComplet;\nfunction isNoiseCandName(n) {\n  if (n == null || String(n).trim() === '') return true;\n  const s = String(n).normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();\n  if (/^(a propos de moi|about me|soft skills|hard skills|formation|projets?|competences|skills|resume|summary)$/.test(s)) return true;\n  if (/\\bpropos\\b/.test(s) && /\\bmoi\\b/.test(s)) return true;\n  if (/\\babout\\b/.test(s) && /\\bme\\b/.test(s)) return true;\n  return false;\n}\nconst candidateRaw = rawName != null && String(rawName).trim() !== '' ? String(rawName).trim() : null;\nconst candidate_name = candidateRaw && !isNoiseCandName(candidateRaw) ? candidateRaw : null;\nfunction nsp(str) {\n  return String(str || '').replace(/\\s+/g, ' ').trim();\n}\nfunction isNoiseEmployerName(v) {\n  const s = nsp(v).toLowerCase();\n  if (!s) return true;\n  if (/^(e[- ]?commerce|shopping|portfolio|project|projet|application|app|website|site web|data analyst|bi|power bi)$/.test(s)) return true;\n  if (/\\b(project|projet|website|application|portfolio|capstone)\\b/.test(s)) return true;\n  return false;\n}\nfunction lastEmployerFromCvN8n(cv) {\n  const txt = String(cv || '');\n  const linePattern = /(?:Stagiaire|Stage|Développeur|Developer|Engineer|Ingénieur)[^\\n–-]{0,80}[–-]\\s*([^\\n,]+)/gi;\n  const matches = [];\n  let m;\n  while ((m = linePattern.exec(txt)) !== null) {\n    if (!m[1]) continue;\n    const start = m.index;\n    const company = nsp(m[1]);\n    if (isNoiseEmployerName(company)) continue;\n    const slice = txt.slice(start, Math.min(txt.length, start + 280));\n    const years = [...slice.matchAll(/\\b(19|20)\\d{2}\\b/g)].map((mm) => parseInt(mm[0], 10)).filter((y) => y >= 1950 && y <= 2038);\n    const maxYear = years.length ? Math.max(...years) : null;\n    const ongoing = /\\b(présent|present|actuel|actuelle|en\\s+cours|current|now)\\b/i.test(slice);\n    const yNow = new Date().getFullYear();\n    const effectiveYear = ongoing ? Math.max(maxYear || yNow, yNow) : maxYear;\n    matches.push({ company, effectiveYear: effectiveYear ?? -1, start });\n  }\n  if (matches.length) {\n    matches.sort((a, b) => {\n      if (b.effectiveYear !== a.effectiveYear) return b.effectiveYear - a.effectiveYear;\n      return a.start - b.start;\n    });\n    return matches[0].company;\n  }\n  return null;\n}\nconst cvText = String($('8 - Get CV text (PCA, no OpenAI)').first().json.text || '');\nconst fromCv = lastEmployerFromCvN8n(cvText);\nconst expCount = Number.isFinite(Number(parsed.experience_count)) ? Math.max(0, parseInt(String(parsed.experience_count), 10)) : 0;\nlet score = Number.isFinite(Number(parsed.score)) ? Number(parsed.score) : 50;\nscore = Math.max(0, Math.min(100, score));\nif (expCount === 0 && score > 68) score = 68;\nlet decision = String(parsed.decision || '').toUpperCase().trim();\nif (expCount === 0 && decision === 'ACCEPTEE' && score <= 70) decision = 'A REVOIR';\nif (!['ACCEPTEE', 'REFUSEE', 'A REVOIR', 'NON_LISIBLE'].includes(decision)) decision = 'A REVOIR';\nconst llmLeRaw = parsed.last_employer != null ? nsp(parsed.last_employer) : '';\nconst llmLe = isNoiseEmployerName(llmLeRaw) ? '' : llmLeRaw;\nconst last_employer = expCount === 0 ? null : (fromCv || llmLe || null);\nif (expCount === 0) {\n  parsed.experience_duration = '';\n  parsed.experience_years_avg = null;\n}\nreturn [{\n  json: {\n    ...parsed,\n    score,\n    decision,\n    candidatureId: meta.candidatureId,\n    offerTitle: meta.offerTitle,\n    offerDescription: meta.offerDescription,\n    candidate_name,\n    last_employer,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -12336,
+        5808
+      ],
+      "id": "2068c118-780d-4f9a-9c82-b44119e7ff05",
+      "name": "11 - Parse LLM JSON"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0, max_tokens: 1800, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.llmUserMessage } ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -12544,
+        5808
+      ],
+      "id": "3f0b54da-bcc0-4ea5-96bb-5ebb2bc9ace8",
+      "name": "10 - OpenAI (credentials n8n)",
+      "credentials": {
+        "openAiApi": {
+          "id": "TkP04RgIaojJb2wp",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cvRes = $input.first().json;\nconst offer = $('7 - Set Offer Context').first().json;\nconst init = $('1 - Initialize Candidate API').first().json;\nconst email = $('2 - Merge (Email + API response)').first().json;\n\nlet cvText = String(cvRes.text || '').trim();\nif (!cvText || cvText.length < 20) {\n  cvText = '[CV INDISPONIBLE OU TROP COURT]\\nLe CV n a pas pu etre extrait correctement depuis MinIO.\\nContinuer l analyse avec le contexte email (sujet + corps) et la coherence du profil.';\n}\nconst offerTitle = String(offer.offerTitle || '');\nconst offerDescription = String(offer.offerDescription || '');\nconst subject = String(email.subject || '');\nconst fromVal = email.from && email.from.value && email.from.value[0];\nconst fromLine = fromVal ? `${fromVal.name || ''} <${fromVal.address}>`.trim() : String(email.from || '');\nconst bodySnippet = String(email.text || email.textPlain || '').slice(0, 2500);\n\nconst internalMatch = typeof offer._offerMatchScore === 'number' && Number.isFinite(offer._offerMatchScore) ? offer._offerMatchScore : null;\nconst CATALOG_MIN = 18;\nconst offerFromCatalog = internalMatch != null && internalMatch >= CATALOG_MIN;\nconst matchLine = internalMatch != null ? ('\\n[Métadonnée PCA — matching sujet → catalogue] Score interne n8n : ' + internalMatch + ' (seuil dans ce workflow : ' + CATALOG_MIN + '). ' + (offerFromCatalog ? 'Offre catalogue retenue : le score mesure surtout l adéquation CV ↔ OFFRE CIBLE (titre + contexte), sans contredire fortement le SUJET (OBJET).' : 'Pas de match catalogue ferme : le titre OFFRE CIBLE suit le SUJET — le score mesure surtout l adéquation CV ↔ OBJET ; OFFRE CIBLE rappelle le même intitulé.')) : '';\n\nconst llmUserMessage = `CONTEXTE EMAIL (message reçu):\\nRéférence A — SUJET (OBJET du mail, intention candidat) : ${subject}\\nDe: ${fromLine}\\nNom API: ${init.candidateName || init.fullName || ''}\\nEmail API: ${init.email || ''}\\nExtrait corps:\\n${bodySnippet}\\n\\nRéférence B — OFFRE CIBLE (titre + contexte : ligne catalogue PCA si matching sujet→catalogue OK, sinon alignée sur le sujet) :\\nTitre: ${offerTitle}\\nContexte: ${offerDescription}${matchLine}\\n\\nTEXTE CV (décodé serveur PCA, tronqué) :\\n${cvText.slice(0, 14000)}\\n\\nRÈGLE DE NOTATION — score (0-100) et décision : croiser A (OBJET) et B (OFFRE CIBLE) avec le CV. Si métadonnée PCA indique offre catalogue retenue : scorer surtout CV↔B, pénaliser hors-métier vs B ou contradiction forte avec A. Sinon : scorer surtout CV↔A ; B est le rappel du titre. Toujours pénaliser décalage stack/métier évident. Pas de score « bon CV en général » sans lien A/B.\\n\\nRÈGLE last_employer (flux n8n, comme le score — basé sur le TEXTE CV) : entreprise de l expérience la PLUS RÉCENTE (dates les plus tardives ou en cours). Beaucoup de CV mettent le plus récent en haut : c est alors la PREMIÈRE entrée de la section expériences, pas la dernière du document.\\nAnalyse ce dossier et renvoie uniquement le JSON demandé.`;\n\nconst systemPrompt = `Tu es un expert RH PCA. Tu fusionnes l'email de candidature et le texte du CV.\\nRéponds UNIQUEMENT avec un objet JSON valide (sans markdown), avec exactement ces clés :\\nsummary, skills, experience, strengths, risks, score (0-100), decision (une parmi ACCEPTEE, REFUSEE, A REVOIR, NON_LISIBLE), offer_context, school, school_type (PUBLIC, PRIVE ou null), phone, experience_count, experience_duration, experience_years_avg, last_employer, candidate_name\\nContraintes de format :\\n- candidate_name : prénom et nom sur la ligne d en-tête du CV (souvent 2 mots en MAJUSCULES). INTERDIT : titre de section (« À propos de moi », Formation, Projets, Compétences, Références…), intitulé de poste seul, expéditeur email, « Nom API », nom de fichier.\\n- skills : string uniquement, compétences séparées par des virgules. Jamais tableau JSON ni accolades type liste.\\n- experience : string uniquement, paragraphe ou blocs séparés par des retours à la ligne, lisible pour un RH. Jamais JSON imbriqué dans ce champ.\\n- offer_context : 2 à 4 phrases en français ; mentionner explicitement le SUJET (OBJET), le titre OFFRE CIBLE, et si la note suit surtout le catalogue ou surtout le sujet (selon métadonnée PCA du message utilisateur).\\n- summary, strengths, risks : prose française.\\n- score : nombre 0-100 ; calibrer strictement selon preuves CV↔offre. Si experience_count = 0, ne pas dépasser 68 sauf preuves exceptionnelles explicites dans le CV.\\n- decision : cohérente avec score/références ; si experience_count = 0 et score <= 70, privilégier A REVOIR plutôt qu ACCEPTEE.\\n- experience_count : nombre d emplois ou de stages EN ENTREPRISE uniquement — exclure projets scolaires/perso sauf « Stage chez Société X ». Étudiant sans emploi réel : 0.\\n- experience_duration : durée totale cumulée des expériences pro (texte). Vide si experience_count = 0.\\n- experience_years_avg : moyenne années = total années / experience_count si experience_count > 0, sinon null.\\n- last_employer : employeur légal ou structure d accueil de stage — jamais le titre d un projet (« E-Commerce Website », « Shopping App », « Data Analyst / BI »). Si experience_count = 0, chaîne vide. Sinon entreprise la plus récente (ordre chronologique comme dans le message utilisateur).`;\n\nreturn [\n  {\n    json: {\n      llmUserMessage,\n      systemPrompt,\n      candidatureId: init.id,\n      offerTitle,\n      offerDescription,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -12768,
+        5808
+      ],
+      "id": "97b62f78-1388-416a-ac9f-7eb43dc5e10b",
+      "name": "9 - Assemble LLM payload"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://127.0.0.1:3005/api/candidatures/cv-text?candidateId=' + encodeURIComponent($('Edit Fields').item.json.candidateId || $('1 - Initialize Candidate API').item.json.candidateId || '') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -12992,
+        5808
+      ],
+      "id": "35abc9e0-280b-4545-9374-bee9c2dc1498",
+      "name": "8 - Get CV text (PCA, no OpenAI)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst offers = Array.isArray(data.offers) ? data.offers : [];\nconst merge = $('2 - Merge (Email + API response)').first().json;\nconst subjectRaw = String(merge.subject || '').trim();\n\nfunction norm(s) {\n  return String(s || '')\n    .toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/^re:\\s*|^fwd:\\s*/gi, '')\n    .replace(/[\\u2010-\\u2015\\u2212]/g, '-')\n    .replace(/[_\\u2013\\u2014\\-]+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst STOP = new Set(['le', 'la', 'les', 'des', 'une', 'pour', 'avec', 'stage', 'pfe', 'offre', 'emploi', 'candidature', 'poste', 'job', 'd', 'de', 'du', 'et', 'ou', 'the', 'a', 'an']);\n\nfunction tokens(s) {\n  return norm(s).split(/[^a-z0-9\\u00c0-\\u024f]+/).filter((t) => t.length > 1 && !STOP.has(t));\n}\n\nconst subjN = norm(subjectRaw);\nconst subjTokens = new Set(tokens(subjectRaw));\n\nconst GROUPS = [\n  { keys: ['devops', 'docker', 'aws', 'kubernetes', 'argo', 'terraform', 'jenkins', 'gitlab'], weight: 58 },\n  { keys: ['data', 'analyst', 'bi', 'power', 'etl'], weight: 52 },\n  { keys: ['full', 'stack', 'react', 'javascript', 'angular', 'vue'], weight: 48 },\n  { keys: ['java', 'spring', 'boot'], weight: 42 },\n  { keys: ['cloud', 'azure'], weight: 36 },\n];\n\nfunction scoreOffer(offer) {\n  const title = String(offer.title || '');\n  const tN = norm(title);\n  let score = 0;\n  for (const g of GROUPS) {\n    const subHit = g.keys.some((k) => subjN.includes(k));\n    const titHit = g.keys.some((k) => tN.includes(k));\n    if (subHit && titHit) score += g.weight;\n    if (subHit && !titHit) score -= 24;\n  }\n  if (subjN && tN && tN.length > 24 && subjN.length > 24 && (subjN.includes(tN) || tN.includes(subjN))) score += 88;\n  let overlap = 0;\n  for (const t of tokens(title)) {\n    if (subjTokens.has(t)) overlap++;\n  }\n  score += overlap * 8;\n  return score;\n}\n\nlet best = null;\nlet bestScore = -1e9;\nfor (const o of offers) {\n  const sc = scoreOffer(o);\n  if (sc > bestScore) {\n    bestScore = sc;\n    best = o;\n  }\n}\n\nconst MIN_SCORE = 18;\nlet offerTitle;\nlet offerDescription;\n\nif (best && bestScore >= MIN_SCORE) {\n  offerTitle = best.title;\n  offerDescription = [best.company, best.location].filter(Boolean).join(' - ');\n} else {\n  offerTitle = subjectRaw.replace(/^re:\\s*|^fwd:\\s*/gi, '').trim() || 'Poste';\n  offerDescription = '';\n}\n\nreturn [{ json: { offerTitle, offerDescription, subject: subjectRaw, _offerMatchScore: bestScore } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -13424,
+        5808
+      ],
+      "id": "744f74d5-ccac-4dd3-9133-e09de7c54477",
+      "name": "7 - Set Offer Context"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:3005/api/offers/catalog",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -13648,
+        5808
+      ],
+      "id": "cc7c05df-d98d-4aed-bfd4-6f422c8093f0",
+      "name": "5 - Fetch Offers Catalog (API)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6968f427-5923-43f8-8619-483367f275b5",
+              "name": "status",
+              "value": "uploaded",
+              "type": "string"
+            },
+            {
+              "id": "0b57c6ad-9dfe-459a-89f5-5a26d687cf91",
+              "name": "candidateId",
+              "value": "={{ $('1 - Initialize Candidate API').item.json.candidateId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -13872,
+        5952
+      ],
+      "id": "091dadf8-d000-424a-add3-019a0a593d85",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.fullUploadUrl }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -14096,
+        5952
+      ],
+      "id": "bb6e2a6d-db39-4b0e-a0ea-2f980b55e92c",
+      "name": "3 - Upload CV to MinIO",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst baseUrl = 'http://127.0.0.1:9000';\n\nreturn items.map((item) => {\n  const uploadUrl = String(item.json.uploadUrl || '').trim();\n  let fullUploadUrl = baseUrl + (uploadUrl.startsWith('/') ? uploadUrl : '/' + uploadUrl);\n  if (!fullUploadUrl.startsWith('http')) fullUploadUrl = baseUrl + '/' + (uploadUrl.replace(/^\\//, '') || 'cvs');\n  const bin = item.binary || {};\n  const attKey = Object.keys(bin).find((k) => k.startsWith('attachment_'));\n  if (attKey && attKey !== 'attachment_0') bin.attachment_0 = bin[attKey];\n  return { json: { ...item.json, fullUploadUrl }, binary: bin };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -14304,
+        5952
+      ],
+      "id": "732fbf6b-d6bd-4a92-a77d-6cc41c4ce3f8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -14528,
+        5952
+      ],
+      "id": "115226bb-8339-4176-b931-c0a8b8e83a11",
+      "name": "2 - Merge (Email + API response)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3005/api/test/candidatures",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? $json.from.value[0].address : ($json.from || $json.envelope?.from || 'inconnu@email.com') }}"
+            },
+            {
+              "name": "fullName",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? ($json.from.value[0].name || $json.from.value[0].address) : ($json.from || 'Candidat') }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject || 'Sans objet' }}"
+            },
+            {
+              "name": "source",
+              "value": "email"
+            },
+            {
+              "name": "text",
+              "value": "={{ ($json.text || $json.textPlain || '').toString().slice(0, 500) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -14752,
+        6064
+      ],
+      "id": "9bd26715-5461-40fe-a366-3814ef60d946",
+      "name": "1 - Initialize Candidate API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ne garder que les emails qui ressemblent à une candidature (sujet ou pièce jointe CV)\nconst items = $input.all();\nconst subjectKeywords = /candidature|cv|application|postule|resume|curriculum|offre|emploi|stage|pfe|stagiaire|internship|développeur|developpeur|developer|full[\\s-]*stack|ingenieur|ingénieur/i;\n\nconst filtered = items.filter((item) => {\n  const subject = String(item.json.subject || '').toLowerCase();\n  const bin = item.binary || {};\n  const attKeys = Object.keys(bin).filter((k) => /^attachment_?\\d*$/i.test(k) || k === 'data');\n  let hasCvAttachment = false;\n  for (const k of attKeys) {\n    const b = bin[k];\n    if (!b) continue;\n    const fn = String(b.fileName || '');\n    const mime = String(b.mimeType || b.mime || '');\n    if (/\\.(pdf|docx?)$/i.test(fn) || /pdf|msword|wordprocessingml|officedocument/i.test(mime)) {\n      hasCvAttachment = true;\n      break;\n    }\n  }\n  return subjectKeywords.test(subject) || hasCvAttachment;\n});\n\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -14944,
+        5952
+      ],
+      "id": "18cff7de-047d-4aac-959a-926ff937a106",
+      "name": "0 - Filter Candidature Email"
+    },
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "dataPropertyAttachmentsPrefixName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        -15168,
+        5952
+      ],
+      "id": "41456954-5f7c-4a74-aeff-d43929c3a923",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "7CoH7h1LsbPuW1yA",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "42b75d3d-c358-49a8-b464-e170dc077121",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -15168,
+        5472
+      ],
+      "id": "e25063d6-e392-4ad3-9d36-ab326fb676d5",
+      "name": "Webhook (PCA) — Entretien RH1",
+      "webhookId": "eaca192c-cc7a-42cf-a7e2-cb4c062600e8"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "186f7202-955b-4813-a1da-6a4ddbf16610",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -15168,
+        5680
+      ],
+      "id": "a8ebf3f7-1fbb-4ffa-82a7-9689363ebcfa",
+      "name": "Webhook (PCA) — Entretien RH2",
+      "webhookId": "eaca192c-cc7a-42cf-a7e2-cb4c062600e8"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "=Invitation à un entretien Technique– Candidature {{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}",
+        "emailFormat": "text",
+        "text": "=Madame, Monsieur {{ $json.body && $json.body.candidateName ? $json.body.candidateName : $json.candidateName }},\n\nSuite à l'étude de votre candidature pour le poste de \"{{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}\", nous vous invitons à un entretien.\n\n- Date et heure : {{ $json.body && $json.body.scheduledAt ? $json.body.scheduledAt : $json.scheduledAt }}\n- Mode : {{ $json.body && $json.body.mode ? $json.body.mode : $json.mode }}\n- Lieu / lien visio : {{ $json.body && $json.body.location ? $json.body.location : $json.location }}\n\nRestant à votre disposition,\n\nCordialement,\nÉquipe RH – PCA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -14544,
+        5472
+      ],
+      "id": "5a585ceb-4d97-4129-92d6-07211dda2735",
+      "name": "Email — Entretien TECH",
+      "webhookId": "5f0667c3-6ec7-4a0c-922d-5f33dfee593e",
+      "credentials": {
+        "smtp": {
+          "id": "Uuo8bp7ZuNoWBkiy",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "=Invitation à un entretien DIRECTEUR – Candidature {{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}",
+        "emailFormat": "text",
+        "text": "=Madame, Monsieur {{ $json.body && $json.body.candidateName ? $json.body.candidateName : $json.candidateName }},\n\nSuite à l'étude de votre candidature pour le poste de \"{{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}\", nous vous invitons à un entretien.\n\n- Date et heure : {{ $json.body && $json.body.scheduledAt ? $json.body.scheduledAt : $json.scheduledAt }}\n- Mode : {{ $json.body && $json.body.mode ? $json.body.mode : $json.mode }}\n- Lieu / lien visio : {{ $json.body && $json.body.location ? $json.body.location : $json.location }}\n\nRestant à votre disposition,\n\nCordialement,\nÉquipe RH – PCA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -14544,
+        5680
+      ],
+      "id": "39731f81-6623-48fb-a825-654d0722198c",
+      "name": "Email — Entretien DIRECTEUR",
+      "webhookId": "5f0667c3-6ec7-4a0c-922d-5f33dfee593e",
+      "credentials": {
+        "smtp": {
+          "id": "Uuo8bp7ZuNoWBkiy",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (PCA) — Entretien RH": {
+      "main": [
+        [
+          {
+            "node": "Email — Entretien RH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 - Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "12 - Save analysis (PCA API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 - OpenAI (credentials n8n)": {
+      "main": [
+        [
+          {
+            "node": "11 - Parse LLM JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9 - Assemble LLM payload": {
+      "main": [
+        [
+          {
+            "node": "10 - OpenAI (credentials n8n)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8 - Get CV text (PCA, no OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "9 - Assemble LLM payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7 - Set Offer Context": {
+      "main": [
+        [
+          {
+            "node": "8 - Get CV text (PCA, no OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5 - Fetch Offers Catalog (API)": {
+      "main": [
+        [
+          {
+            "node": "7 - Set Offer Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "5 - Fetch Offers Catalog (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3 - Upload CV to MinIO": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "3 - Upload CV to MinIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2 - Merge (Email + API response)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 - Initialize Candidate API": {
+      "main": [
+        [
+          {
+            "node": "2 - Merge (Email + API response)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "0 - Filter Candidature Email": {
+      "main": [
+        [
+          {
+            "node": "1 - Initialize Candidate API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "2 - Merge (Email + API response)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "0 - Filter Candidature Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (PCA) — Entretien RH1": {
+      "main": [
+        [
+          {
+            "node": "Email — Entretien TECH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (PCA) — Entretien RH2": {
+      "main": [
+        [
+          {
+            "node": "Email — Entretien DIRECTEUR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fc7d07b0-022b-4a7b-8fba-d28ca62a894c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4f17546b8c17d9577019299a608659db91eb462ce0cbe9e8ab6f799f98e5043f"
+  },
+  "id": "V0ARNWjf1Yz7Gjwz",
+  "tags": []
+}

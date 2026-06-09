@@ -1,0 +1,12 @@
+const fs = require('fs')
+const path = require('path')
+
+const root = process.cwd()
+const wf = fs.readdirSync(root).find((n) => n.endsWith('PCA (7).json'))
+if (!wf) process.exit(2)
+const p = path.join(root, wf)
+const data = JSON.parse(fs.readFileSync(p, 'utf8'))
+const node = (data.nodes || []).find((n) => n.name === '9 - Assemble LLM payload')
+if (!node || !node.parameters || typeof node.parameters.jsCode !== 'string') process.exit(2)
+fs.writeFileSync(path.join(root, 'scripts', '_ai_node_9_jscode.txt'), node.parameters.jsCode, 'utf8')
+console.log('ok')

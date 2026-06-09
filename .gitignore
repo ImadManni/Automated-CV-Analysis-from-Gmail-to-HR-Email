@@ -1,0 +1,14 @@
+﻿node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+.cursor/
+.vscode/
+.idea/
+*.log
+
+minio/minio.exe
+server/data/minio
+cookies.json

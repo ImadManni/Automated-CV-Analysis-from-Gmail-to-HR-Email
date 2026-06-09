@@ -1,0 +1,38 @@
+%% Use Case — Automated CV Analysis (Gmail → HR Email)
+%% PCA Payment Center for Africa — Mermaid (view in GitHub / VS Code)
+
+flowchart LR
+  subgraph Actors
+    User([Utilisateur\nVisiteur / RH])
+    N8N([Workflow n8n])
+  end
+
+  subgraph Application["Application Web PCA"]
+    UC1[Consulter la page d'accueil]
+    UC2[Voir le hero et le processus]
+    UC3[Voir la localisation\ncarte + Google Maps]
+    UC4[Accéder au tableau de bord]
+    UC5[Consulter les statistiques]
+    UC6[Filtrer les candidatures]
+    UC7[Analytics détaillées]
+    UC8[Ouvrir Grafana]
+    UC9[Liste des candidatures]
+  end
+
+  User --> UC1
+  User --> UC2
+  User --> UC3
+  User --> UC4
+  User --> UC5
+  User --> UC6
+  User --> UC7
+  User --> UC8
+  User --> UC9
+
+  UC4 -.->|include| UC5
+  UC4 -.->|include| UC9
+  UC4 -.->|include| UC7
+  UC4 -.->|extend| UC8
+  N8N --> UC10[Déclencher workflow]
+  UC10 -.-> UC11[Extraire / Analyser CV]
+  UC11 -.-> UC12[Envoyer décision RH]

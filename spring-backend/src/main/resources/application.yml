@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: candidature-service
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/pca
+    username: pca_user
+    password: Posgres2026
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8081  
+

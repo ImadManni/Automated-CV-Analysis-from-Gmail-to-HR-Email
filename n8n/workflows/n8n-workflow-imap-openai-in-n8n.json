@@ -1,0 +1,532 @@
+{
+  "name": "PCA - IMAP → MinIO → OpenAI (n8n) → PCA",
+  "meta": {
+    "description": "L’appel OpenAI se fait dans n8n (credential OpenAI). Le serveur PCA ne fait que PDF→texte (GET /cv-text) et enregistrement (POST /analysis-result). Pour une vraie « memory » LangChain multi-tours, ajoutez dans l’éditeur : Basic LLM Chain + Window Buffer Memory + Chat OpenAI.",
+    "instanceId": ""
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "dataPropertyAttachmentsPrefixName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        520
+      ],
+      "id": "dc1609b0-bc49-4941-85d2-41d7cbcf8ebb",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "7CoH7h1LsbPuW1yA",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ne garder que les emails qui ressemblent à une candidature (sujet ou pièce jointe CV)\nconst items = $input.all();\nconst subjectKeywords = /candidature|cv|application|postule|resume|curriculum|offre|emploi|stage|pfe|stagiaire|internship|développeur|developpeur|developer|full[\\s-]*stack|ingenieur|ingénieur/i;\n\nconst filtered = items.filter((item) => {\n  const subject = String(item.json.subject || '').toLowerCase();\n  const bin = item.binary || {};\n  const attKeys = Object.keys(bin).filter((k) => /^attachment_?\\d*$/i.test(k) || k === 'data');\n  let hasCvAttachment = false;\n  for (const k of attKeys) {\n    const b = bin[k];\n    if (!b) continue;\n    const fn = String(b.fileName || '');\n    const mime = String(b.mimeType || b.mime || '');\n    if (/\\.(pdf|docx?)$/i.test(fn) || /pdf|msword|wordprocessingml|officedocument/i.test(mime)) {\n      hasCvAttachment = true;\n      break;\n    }\n  }\n  return subjectKeywords.test(subject) || hasCvAttachment;\n});\n\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        520
+      ],
+      "id": "eb007117-48f5-44cb-ac61-10c596123ce7",
+      "name": "0 - Filter Candidature Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3005/api/test/candidatures",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? $json.from.value[0].address : ($json.from || $json.envelope?.from || 'inconnu@email.com') }}"
+            },
+            {
+              "name": "fullName",
+              "value": "={{ $json.from && $json.from.value && $json.from.value[0] ? ($json.from.value[0].name || $json.from.value[0].address) : ($json.from || 'Candidat') }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject || 'Sans objet' }}"
+            },
+            {
+              "name": "source",
+              "value": "email"
+            },
+            {
+              "name": "text",
+              "value": "={{ ($json.text || $json.textPlain || '').toString().slice(0, 500) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        640
+      ],
+      "id": "e9f7ef67-cb89-42f1-9f11-0bbf1614510c",
+      "name": "1 - Initialize Candidate API"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        640,
+        520
+      ],
+      "id": "3f6ec1e4-2fa7-48c8-90db-bf7e9c8f6e34",
+      "name": "2 - Merge (Email + API response)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst baseUrl = 'http://127.0.0.1:9000';\n\nreturn items.map((item) => {\n  const uploadUrl = String(item.json.uploadUrl || '').trim();\n  let fullUploadUrl = baseUrl + (uploadUrl.startsWith('/') ? uploadUrl : '/' + uploadUrl);\n  if (!fullUploadUrl.startsWith('http')) fullUploadUrl = baseUrl + '/' + (uploadUrl.replace(/^\\//, '') || 'cvs');\n  const bin = item.binary || {};\n  const attKey = Object.keys(bin).find((k) => k.startsWith('attachment_'));\n  if (attKey && attKey !== 'attachment_0') bin.attachment_0 = bin[attKey];\n  return { json: { ...item.json, fullUploadUrl }, binary: bin };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        520
+      ],
+      "id": "a5018f20-0fe4-4796-8707-bf35d4988d1f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.fullUploadUrl }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        520
+      ],
+      "id": "7dc5ff84-8048-4de5-8bb5-e125afb44fef",
+      "name": "3 - Upload CV to MinIO",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6968f427-5923-43f8-8619-483367f275b5",
+              "name": "status",
+              "value": "uploaded",
+              "type": "string"
+            },
+            {
+              "id": "0b57c6ad-9dfe-459a-89f5-5a26d687cf91",
+              "name": "candidateId",
+              "value": "={{ $('1 - Initialize Candidate API').item.json.candidateId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1300,
+        520
+      ],
+      "id": "7e6582da-6d1f-4c5b-80da-9088473c0d5b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:3005/api/campaigns",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        380
+      ],
+      "id": "7308ad90-e66b-4185-823b-40701f721233",
+      "name": "5 - Fetch Campaigns (API)"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://127.0.0.1:3005/api/campaigns/' + (($json.campaigns && $json.campaigns[0] && $json.campaigns[0].id) || ($json[0] && $json[0].id) || '1') + '/offers' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1740,
+        380
+      ],
+      "id": "7c989ed2-5b10-4abe-a3ed-b77faa993e2f",
+      "name": "6 - Fetch Offers (API)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1111111-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+              "name": "offerTitle",
+              "value": "={{ $json.offers && $json.offers[0] ? $json.offers[0].title : ($json[0] && $json[0].title) || 'Poste' }}",
+              "type": "string"
+            },
+            {
+              "id": "b2222222-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+              "name": "offerDescription",
+              "value": "={{ $json.offers && $json.offers[0] ? (($json.offers[0].company || '') + ' - ' + ($json.offers[0].location || '')) : (($json[0] && $json[0].company) || '') + ' - ' + (($json[0] && $json[0].location) || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1960,
+        380
+      ],
+      "id": "9e94d959-6d61-43c0-aa68-9920f57d147b",
+      "name": "7 - Set Offer Context"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://127.0.0.1:3005/api/candidatures/cv-text?candidateId=' + encodeURIComponent($('Edit Fields').item.json.candidateId || $('1 - Initialize Candidate API').item.json.candidateId || '') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2180,
+        380
+      ],
+      "id": "a8c1b2d3-e4f5-6789-abcd-ef0123456789",
+      "name": "8 - Get CV text (PCA, no OpenAI)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cvRes = $input.first().json\nconst offer = $('7 - Set Offer Context').first().json\nconst init = $('1 - Initialize Candidate API').first().json\nconst email = $('2 - Merge (Email + API response)').first().json\n\nconst cvText = String(cvRes.text || '')\nconst offerTitle = String(offer.offerTitle || '')\nconst offerDescription = String(offer.offerDescription || '')\nconst subject = String(email.subject || '')\nconst fromVal = email.from && email.from.value && email.from.value[0]\nconst fromLine = fromVal ? `${fromVal.name || ''} <${fromVal.address}>`.trim() : String(email.from || '')\nconst bodySnippet = String(email.text || email.textPlain || '').slice(0, 2500)\n\nconst internalMatch =\n  typeof offer._offerMatchScore === 'number' && Number.isFinite(offer._offerMatchScore)\n    ? offer._offerMatchScore\n    : null\nconst CATALOG_MIN = 18\nconst offerFromCatalog = internalMatch != null && internalMatch >= CATALOG_MIN\n\nconst matchLine =\n  internalMatch != null\n    ? '\\n[Métadonnée PCA — matching sujet email → ligne catalogue] Score interne n8n : ' +\n      internalMatch +\n      ' (seuil catalogue dans ce workflow : ' +\n      CATALOG_MIN +\n      '). ' +\n      (offerFromCatalog\n        ? 'Une offre catalogue a été retenue : le score doit surtout mesurer l’adéquation CV ↔ OFFRE CIBLE (titre + contexte), sans contradiction majeure avec le SUJET (OBJET) du mail.'\n        : 'Aucune ligne catalogue suffisamment ferme : le titre OFFRE CIBLE reprend surtout le SUJET du candidat — le score doit surtout mesurer l’adéquation CV ↔ OBJET ; OFFRE CIBLE sert de rappel du même intitulé.')\n    : ''\n\nconst llmUserMessage = `CONTEXTE EMAIL (message reçu):\nRéférence A — SUJET (OBJET du mail, intention du candidat) : ${subject}\nDe: ${fromLine}\nNom API: ${init.candidateName || init.fullName || ''}\nEmail API: ${init.email || ''}\nExtrait corps:\n${bodySnippet}\n\nRéférence B — OFFRE CIBLE (titre + contexte ; ligne catalogue PCA si matching sujet→catalogue OK, sinon ≈ reformulation du sujet) :\nTitre: ${offerTitle}\nContexte: ${offerDescription || '(non renseigné)'}${matchLine}\n\nTEXTE CV (décodé serveur PCA, tronqué) :\n${cvText.slice(0, 14000)}\n\nRÈGLE DE NOTATION — score (0-100) et décision (ACCEPTEE / REFUSEE / A REVOIR) :\nTu croises obligatoirement A (OBJET) et B (OFFRE CIBLE) avec le CV.\n• Si une offre catalogue a été retenue (voir métadonnée PCA ci-dessus) : le score reflète surtout l’adéquation CV ↔ B ; pénalise fort si le CV est aligné sur un autre métier que B tout en contredisant A ou B.\n• Si seul le sujet a été pris comme référence (pas de catalogue ferme) : le score reflète surtout l’adéquation CV ↔ A ; B rappelle le même libellé.\n• Toujours pénaliser un décalage métier / stack évident (ex. CV 100 % data vs A/B full-stack, ou l’inverse). Valoriser preuves (projets, expérience, stack) alignées sur la référence prioritaire.\n• Ne pas attribuer un score de « bon CV en général » sans lien avec A et B.\n\nAnalyse ce dossier et renvoie uniquement le JSON demandé.`\n\nconst systemPrompt = `Tu es un expert RH PCA. Tu fusionnes l'email de candidature et le texte du CV.\nRéponds UNIQUEMENT avec un objet JSON valide (sans markdown), avec exactement ces clés :\nsummary, skills, experience, strengths, risks, score (0-100), decision (une parmi ACCEPTEE, REFUSEE, A REVOIR, NON_LISIBLE), offer_context, school, school_type (PUBLIC, PRIVE ou null), phone, experience_count, experience_duration, experience_years_avg, last_employer, candidate_name\nContraintes de format :\n- candidate_name : string obligatoire si le nom apparaît sur le CV (souvent en haut du document en majuscules). Source UNIQUEMENT le texte du CV. Interdit : nom de l'expéditeur du mail, champ « Nom API », nom de fichier PDF, ou toute métadonnée hors CV.\n- skills : string uniquement, compétences séparées par des virgules. Jamais tableau JSON ni accolades type liste.\n- experience : string uniquement, paragraphe ou blocs séparés par des retours à la ligne, lisible pour un RH. Jamais JSON imbriqué dans ce champ.\n- offer_context : 2 à 4 phrases en français, style fiche RH ; mentionner explicitement le SUJET (OBJET) du candidat, l’OFFRE CIBLE (titre) utilisée pour la note, et si le score suit surtout le catalogue ou surtout le sujet (selon la métadonnée PCA du message utilisateur).\n- summary, strengths, risks : prose française.\n- score : nombre 0-100 ; appliquer strictement la règle du message utilisateur (croiser A = SUJET et B = OFFRE CIBLE avec le CV, priorité catalogue ou priorité sujet selon la métadonnée). Pas d’évaluation générique.\n- decision : cohérente avec ce score et ces références A/B (pas une note « en général »).\nSi le CV est illisible ou trop court : NON_LISIBLE.`\n\nreturn [\n  {\n    json: {\n      llmUserMessage,\n      systemPrompt,\n      candidatureId: init.id,\n      offerTitle,\n      offerDescription,\n    },\n  },\n]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        380
+      ],
+      "id": "b9d0c1e2-f3a4-5678-9abc-def012345678",
+      "name": "9 - Assemble LLM payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.2, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.llmUserMessage } ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2620,
+        380
+      ],
+      "id": "c0e1f2a3-b4c5-6789-dabc-ef0123456789",
+      "name": "10 - OpenAI (credentials n8n)",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst content = raw.choices && raw.choices[0] && raw.choices[0].message && raw.choices[0].message.content;\nif (!content) throw new Error('Réponse OpenAI vide: ' + JSON.stringify(raw).slice(0, 500));\nlet s = String(content).trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/,'').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(s);\n} catch (e) {\n  throw new Error('JSON invalide: ' + e.message + ' — ' + s.slice(0, 300));\n}\nconst meta = $('9 - Assemble LLM payload').first().json;\nreturn [{\n  json: {\n    ...parsed,\n    candidatureId: meta.candidatureId,\n    offerTitle: meta.offerTitle,\n    offerDescription: meta.offerDescription,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        380
+      ],
+      "id": "d1f2a3b4-c5d6-7890-abcd-ef1234567890",
+      "name": "11 - Parse LLM JSON"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://127.0.0.1:3005/api/candidatures/' + $json.candidatureId + '/analysis-result' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ summary: $json.summary, skills: $json.skills, experience: $json.experience, strengths: $json.strengths, risks: $json.risks, score: $json.score, decision: $json.decision, offer_context: $json.offer_context, school: $json.school, school_type: $json.school_type, phone: $json.phone, experience_count: $json.experience_count, experience_duration: $json.experience_duration, experience_years_avg: $json.experience_years_avg, last_employer: $json.last_employer, offerTitle: $json.offerTitle, offerDescription: $json.offerDescription }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3060,
+        380
+      ],
+      "id": "e2a3b4c5-d6e7-8901-bcde-f12345678901",
+      "name": "12 - Save analysis (PCA API)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## OpenAI dans n8n + « mémoire »\n- Ce flux utilise **HTTP Request** + credential **OpenAI API** (clé uniquement dans n8n).\n- **Mémoire conversationnelle** : pour plusieurs tours dans le même workflow, remplacez les nœuds 10–11 par un sous-graphe **Basic LLM Chain** + **Window Buffer Memory** + **OpenAI Chat Model** (menu *Add node* → LangChain).\n- Si l’import signale une erreur de credential : ouvrez le nœud 10 et sélectionnez votre compte OpenAI.",
+        "height": 320,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        80
+      ],
+      "id": "f3b4c5d6-e7f8-9012-cdef-123456789012",
+      "name": "Note mémoire LangChain"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pca-interview-invitation",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        200
+      ],
+      "id": "c1e13f5b-0655-4aae-b90a-a5c3c20d2cfe",
+      "name": "Webhook Invitation Entretien",
+      "webhookId": "904d2cc4-935c-4ebd-ac87-7195c2ed3ed0"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hydragaming595@gmail.com",
+        "toEmail": "={{ $json.body && $json.body.email ? $json.body.email : $json.email }}",
+        "subject": "=Invitation à un entretien – Candidature {{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}",
+        "emailFormat": "text",
+        "text": "=Madame, Monsieur {{ $json.body && $json.body.candidateName ? $json.body.candidateName : $json.candidateName }},\n\nSuite à l'étude de votre candidature pour le poste de \"{{ $json.body && $json.body.subject ? $json.body.subject : $json.subject }}\", nous vous invitons à un entretien.\n\n- Date et heure : {{ $json.body && $json.body.scheduledAt ? $json.body.scheduledAt : $json.scheduledAt }}\n- Mode : {{ $json.body && $json.body.mode ? $json.body.mode : $json.mode }}\n- Lieu / lien visio : {{ $json.body && $json.body.location ? $json.body.location : $json.location }}\n\nRestant à votre disposition,\n\nCordialement,\nÉquipe RH – PCA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        200
+      ],
+      "id": "c202b0de-b6e1-448e-a066-bf80ff11685b",
+      "name": "Send Email Invitation Entretien",
+      "credentials": {
+        "smtp": {
+          "id": "Uuo8bp7ZuNoWBkiy",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "0 - Filter Candidature Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "0 - Filter Candidature Email": {
+      "main": [
+        [
+          {
+            "node": "2 - Merge (Email + API response)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "1 - Initialize Candidate API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 - Initialize Candidate API": {
+      "main": [
+        [
+          {
+            "node": "2 - Merge (Email + API response)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "2 - Merge (Email + API response)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "3 - Upload CV to MinIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3 - Upload CV to MinIO": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "5 - Fetch Campaigns (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5 - Fetch Campaigns (API)": {
+      "main": [
+        [
+          {
+            "node": "6 - Fetch Offers (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6 - Fetch Offers (API)": {
+      "main": [
+        [
+          {
+            "node": "7 - Set Offer Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7 - Set Offer Context": {
+      "main": [
+        [
+          {
+            "node": "8 - Get CV text (PCA, no OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8 - Get CV text (PCA, no OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "9 - Assemble LLM payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9 - Assemble LLM payload": {
+      "main": [
+        [
+          {
+            "node": "10 - OpenAI (credentials n8n)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 - OpenAI (credentials n8n)": {
+      "main": [
+        [
+          {
+            "node": "11 - Parse LLM JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 - Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "12 - Save analysis (PCA API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Invitation Entretien": {
+      "main": [
+        [
+          {
+            "node": "Send Email Invitation Entretien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

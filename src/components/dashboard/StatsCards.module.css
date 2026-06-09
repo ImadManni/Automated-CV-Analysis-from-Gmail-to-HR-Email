@@ -1,0 +1,50 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--pca-card);
+  border: 1px solid var(--pca-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.card:hover {
+  border-color: rgba(232, 93, 4, 0.4);
+}
+
+.iconWrap {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pca-bg-alt);
+  border-radius: 8px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  color: var(--pca-dark);
+  line-height: 1.2;
+}
+
+.label {
+  font-size: 0.8rem;
+  color: var(--pca-gray);
+}

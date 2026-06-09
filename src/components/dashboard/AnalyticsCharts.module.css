@@ -1,0 +1,107 @@
+.wrapper {
+  background: var(--pca-card);
+  border: 1px solid var(--pca-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.barWrap {
+  margin-bottom: 1rem;
+}
+
+.bar {
+  display: flex;
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--pca-bg-alt);
+}
+
+.segment {
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legendLabel {
+  color: var(--pca-gray);
+}
+
+.legendValue {
+  color: var(--pca-dark);
+  font-weight: 500;
+}
+
+.frequency {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--pca-border);
+  padding-top: 1rem;
+}
+
+.frequencyTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--pca-dark);
+  margin-bottom: 0.75rem;
+}
+
+.frequencyBars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.frequencyItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.frequencyBarTrack {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pca-bg-alt);
+  overflow: hidden;
+}
+
+.frequencyBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pca-orange), #ffb35a);
+}
+
+.frequencyMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--pca-gray);
+}
+
+.frequencyLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.frequencyCount {
+  font-weight: 500;
+  color: var(--pca-dark);
+}
