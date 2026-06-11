@@ -3452,6 +3452,8 @@ Utilise uniquement les résultats web ci-dessus. Ajoute les URLs utilisées à l
         businessUnit: c.businessUnit,
         decision: c.decision,
         rawSummary: c.rawSummary,
+        skills: c.skills,
+        experience: c.experience,
         school: c.school,
         schoolType: c.schoolType,
         phone: c.phone,

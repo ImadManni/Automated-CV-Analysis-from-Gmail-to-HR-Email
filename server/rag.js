@@ -358,6 +358,8 @@ function isCandidateFocusedQuery(message, hit) {
     wantsCandidateBusinessUnit(message) ||
     wantsCandidateReceptionDate(message) ||
     wantsCandidateOfferContext(message) ||
+    wantsCandidateSkillsField(message) ||
+    wantsCandidateExperienceField(message) ||
     wantsCandidateExperienceCount(message) ||
     wantsCandidateExperienceDuration(message) ||
     wantsCandidateTimeToHire(message) ||
@@ -532,6 +534,17 @@ function wantsCandidateOfferContext(message) {
   return /\bcontexte\s*offre\b|offer\s*context/.test(t)
 }
 
+function wantsCandidateSkillsField(message) {
+  const t = (message || '').toLowerCase()
+  return /\bcomp[eé]tences?\b|\bskills\b|\bhard\s*skills\b|\bsoft\s*skills\b/.test(t)
+}
+
+function wantsCandidateExperienceField(message) {
+  if (wantsCandidateExperienceCount(message) || wantsCandidateExperienceDuration(message)) return false
+  const t = (message || '').toLowerCase()
+  return /\bexp[eé]riences?\b|\bexperience\b|\bparcours\s*professionnel\b/.test(t)
+}
+
 function wantsCandidateExperienceCount(message) {
   const t = (message || '').toLowerCase()
   return /\bnombre\s*d.?exp[eé]rience|experience\s*count|combien\s*d.?exp[eé]riences?/.test(t)
@@ -600,7 +613,7 @@ function wantsPendingInterviews(message) {
 
 function hasCandidateLookupIntent(message) {
   const t = (message || '').toLowerCase()
-  if (/\bpour\s+|de\s+[a-zàâäéèêëïîôùûü]|candidature\s+de|profil\s+de|candidate\s+|candidat\s+|nom\b|\bscore\b|\br[eé]sum[eé]\b|\bsynth[eè]se\b|\bresultat\b|\bd[eé]cision\b/.test(t)) return true
+  if (/\bpour\s+|de\s+[a-zàâäéèêëïîôùûü]|candidature\s+de|profil\s+de|candidate\s+|candidat\s+|nom\b|\bscore\b|\br[eé]sum[eé]\b|\bsynth[eè]se\b|\bresultat\b|\bd[eé]cision\b|\bcomp[eé]tences?\b|\bskills\b|\bexp[eé]riences?\b|\bexperience\b|\bcontexte\s*offre\b/.test(t)) return true
   return /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][\w'’\-àâäéèêëïîôùûü]{1,30}(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][\w'’\-àâäéèêëïîôùûü]{1,30}){1,4}\s*$/.test((message || '').trim())
 }
 
@@ -1147,6 +1160,8 @@ export function getRagAnswer(message, context = null) {
       wantsCandidateReceptionDate(trimmed) ||
       wantsCandidateSummary(trimmed) ||
       wantsCandidateOfferContext(trimmed) ||
+      wantsCandidateSkillsField(trimmed) ||
+      wantsCandidateExperienceField(trimmed) ||
       wantsCandidateExperienceCount(trimmed) ||
       wantsCandidateExperienceDuration(trimmed) ||
       wantsCandidateTimeToHire(trimmed) ||
@@ -1357,6 +1372,8 @@ export function getRagAnswer(message, context = null) {
       wantsCandidateReceptionDate(message) ||
       wantsCandidateSummary(message) ||
       wantsCandidateOfferContext(message) ||
+      wantsCandidateSkillsField(message) ||
+      wantsCandidateExperienceField(message) ||
       wantsCandidateExperienceCount(message) ||
       wantsCandidateExperienceDuration(message) ||
       wantsCandidateTimeToHire(message) ||
@@ -1499,6 +1516,24 @@ export function getRagAnswer(message, context = null) {
           forceDirect = true
           return { answer, language: lang, forceDirect }
         }
+        if (wantsCandidateSkillsField(message)) {
+          const value = String(hit.skills || '').trim() || 'Compétences non renseignées pour cette candidature.'
+          const frSkills = `Compétences de ${hit.candidateName || 'ce candidat'}:\n${value}`
+          const enSkills = `Skills for ${hit.candidateName || 'this candidate'}:\n${value}`
+          const dzSkills = `Compétences dyal ${hit.candidateName || 'had candidat'}:\n${value}`
+          answer = ({ fr: frSkills, en: enSkills, darija: dzSkills }[lang] || frSkills)
+          forceDirect = true
+          return { answer, language: lang, forceDirect }
+        }
+        if (wantsCandidateExperienceField(message)) {
+          const value = String(hit.experience || '').trim() || 'Expérience non renseignée pour cette candidature.'
+          const frExp = `Expérience de ${hit.candidateName || 'ce candidat'}:\n${value}`
+          const enExp = `Experience for ${hit.candidateName || 'this candidate'}:\n${value}`
+          const dzExp = `Expérience dyal ${hit.candidateName || 'had candidat'}:\n${value}`
+          answer = ({ fr: frExp, en: enExp, darija: dzExp }[lang] || frExp)
+          forceDirect = true
+          return { answer, language: lang, forceDirect }
+        }
         if (wantsCandidateExperienceCount(message)) {
           const count = hit.experienceCount != null ? hit.experienceCount : '—'
           const frCount = `Nombre d’expérience pour ${hit.candidateName || 'ce candidat'}: ${count}`
@@ -1628,7 +1663,7 @@ export function getRagAnswer(message, context = null) {
         answer = ({ fr, en, darija }[lang] || fr)
         forceDirect = true
         return { answer, language: lang, forceDirect }
-      } else if (candidateLookupOk && (wantsCandidateDecision(message) || wantsCandidateNameField(message) || wantsCandidateEmailField(message) || wantsCandidatePhoneField(message) || wantsCandidateSubjectField(message) || wantsCandidateDateField(message) || wantsCandidateSchoolField(message) || wantsCandidateLastEmployerField(message) || wantsCandidateOfferTitleField(message) || wantsCandidateBusinessUnit(message) || wantsCandidateReceptionDate(message) || wantsCandidateSummary(message) || wantsCandidateOfferContext(message) || wantsCandidateExperienceCount(message) || wantsCandidateExperienceDuration(message) || wantsCandidateTimeToHire(message) || wantsCandidateRdv(message) || wantsCandidateInterviewValidity(message) || wantsHrSectionsCandidateSearch(message) || wantsSpecificCandidateResult(message))) {
+      } else if (candidateLookupOk && (wantsCandidateDecision(message) || wantsCandidateNameField(message) || wantsCandidateEmailField(message) || wantsCandidatePhoneField(message) || wantsCandidateSubjectField(message) || wantsCandidateDateField(message) || wantsCandidateSchoolField(message) || wantsCandidateLastEmployerField(message) || wantsCandidateOfferTitleField(message) || wantsCandidateBusinessUnit(message) || wantsCandidateReceptionDate(message) || wantsCandidateSummary(message) || wantsCandidateOfferContext(message) || wantsCandidateSkillsField(message) || wantsCandidateExperienceField(message) || wantsCandidateExperienceCount(message) || wantsCandidateExperienceDuration(message) || wantsCandidateTimeToHire(message) || wantsCandidateRdv(message) || wantsCandidateInterviewValidity(message) || wantsHrSectionsCandidateSearch(message) || wantsSpecificCandidateResult(message))) {
         const suggestions = findClosestCandidateNames(message, mergedItems)
         if (suggestions.length) {
           const fr = `Ma lqit-ch candidate exact b had smiya f context. Peut-etre qsedti: ${suggestions.join(', ')}`
