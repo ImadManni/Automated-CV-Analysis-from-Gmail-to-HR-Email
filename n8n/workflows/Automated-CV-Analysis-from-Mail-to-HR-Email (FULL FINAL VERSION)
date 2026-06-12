@@ -1,5 +1,5 @@
 {
-  "name": "PCA - IMAP → MinIO → OpenAI (n8n) → PCA (3) FINAL-SFE",
+  "name": "Automated-CV-Analysis-from-Mail-to-HR-Email (FULL FINAL VERSION)",
   "nodes": [
     {
       "parameters": {
